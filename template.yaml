@@ -107,9 +107,6 @@ Resources:
                     Properties:
                         Path: /updatePost/{id}
                         Method: PUT
-    
-    SrcBucket:
-        Type: AWS::S3::Bucket
 
     PostsDynamoDbTable:
         Type: AWS::DynamoDB::Table
