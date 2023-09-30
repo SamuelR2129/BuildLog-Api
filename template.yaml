@@ -1,0 +1,143 @@
+# prettier-ignore
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+    BuildLog
+
+    Holds the lambda and s3 functions for the server
+
+Globals:
+    Api:
+        BinaryMediaTypes:
+        - "multipart/form-data"
+        - "application/json"
+    Function:
+        Timeout: 100
+        MemorySize: 128
+        Runtime: nodejs18.x
+        Architectures: [x86_64]
+        Layers:
+          - !Ref CRUDDependencyLayer
+        Environment:
+            Variables:
+                REGION_NAME: 'ap-southeast-2'
+                DYNAMO_TABLE: !Ref PostsDynamoDbTable
+                DYNAMO_TABLE_NAME: 'post-tables'
+                S3_BUCKET_NAME: 's3-lambda-stack-srcbucket-dpcaitz3x0hb'
+Resources:
+
+    UploadPostToDynamo:
+        Type: AWS::Serverless::Function
+        Metadata:
+            BuildMethod: makefile
+        Properties:
+            Policies:
+                - DynamoDBCrudPolicy:
+                    TableName: !Ref PostsDynamoDbTable
+                - S3CrudPolicy:
+                    BucketName: "s3-lambda-stack-srcbucket-dpcaitz3x0hb"
+            Handler: dist/posts/savePost.save_post_to_dynamodb
+            Events:
+                Api:
+                    Type: Api
+                    Properties:
+                        Path: /savePost
+                        Method: POST
+
+    GetPostsFromDynamo:
+        Type: AWS::Serverless::Function
+        Metadata:
+            BuildMethod: makefile
+        Properties:
+            Policies:
+                - DynamoDBCrudPolicy:
+                    TableName: !Ref PostsDynamoDbTable
+            Handler: dist/posts/getPosts.get_posts_from_dynamodb
+            Events:
+                Api:
+                    Type: Api
+                    Properties:
+                        Path: /getPosts
+                        Method: GET
+    
+    GetTableData:
+        Type: AWS::Serverless::Function
+        Metadata:
+            BuildMethod: makefile
+        Properties:
+            Policies:
+                - DynamoDBCrudPolicy:
+                    TableName: !Ref PostsDynamoDbTable
+            Handler: dist/table/getTableData.get_table_data
+            Events:
+                Api:
+                    Type: Api
+                    Properties:
+                        Path: /getTableData
+                        Method: GET
+
+    DeletePostFromDynamo:
+        Type: AWS::Serverless::Function
+        Metadata:
+            BuildMethod: makefile
+        Properties:
+            Policies:
+                - DynamoDBCrudPolicy:
+                    TableName: !Ref PostsDynamoDbTable
+            Handler: dist/posts/deletePost.delete_post_from_dynamodb
+            Events:
+                Api:
+                    Type: Api
+                    Properties:
+                        Path: /deletePost/{id}
+                        Method: DELETE
+
+    UpdatePostInDynamo:
+        Type: AWS::Serverless::Function
+        Metadata:
+            BuildMethod: makefile
+        Properties:
+            Policies:
+                - DynamoDBCrudPolicy:
+                    TableName: !Ref PostsDynamoDbTable
+            Handler: dist/posts/updatePost.update_post_in_dynamodb
+            Events:
+                Api:
+                    Type: Api
+                    Properties:
+                        Path: /updatePost/{id}
+                        Method: PUT
+    
+    SrcBucket:
+        Type: AWS::S3::Bucket
+
+    PostsDynamoDbTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            AttributeDefinitions:
+                - AttributeName: id
+                  AttributeType: S
+            KeySchema:
+                - AttributeName: id
+                  KeyType: HASH
+            ProvisionedThroughput:
+                ReadCapacityUnits: 5
+                WriteCapacityUnits: 5
+            TableName: 'post-tables'
+
+    CRUDDependencyLayer:
+        Type: AWS::Serverless::LayerVersion
+        Metadata:
+            BuildMethod: makefile
+        Properties:
+            Description: Dependencies for lambdas
+            ContentUri: ./
+            CompatibleRuntimes:
+              - nodejs18.x
+            LicenseInfo: 'MIT'
+            RetentionPolicy: Retain
+
+Outputs:
+  WebEndpoint:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
