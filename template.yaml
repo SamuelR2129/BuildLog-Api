@@ -9,8 +9,12 @@ Description: >
 Globals:
     Api:
         BinaryMediaTypes:
-        - "multipart/form-data"
-        - "application/json"
+          - "multipart/form-data"
+          - "application/json"
+        Cors:
+            AllowMethods: "'GET,POST,OPTIONS,PUT,DELETE'"
+            AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,x-requested-with'"
+            AllowOrigin: "'*'"
     Function:
         Timeout: 100
         MemorySize: 128

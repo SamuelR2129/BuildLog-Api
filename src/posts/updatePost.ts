@@ -2,15 +2,40 @@ import 'source-map-support/register';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { UpdateCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
-import * as parser from 'lambda-multipart-parser';
+import { z } from 'zod';
 
 const client = new DynamoDBClient({ region: process.env.REGION_NAME });
 const docClient = DynamoDBDocumentClient.from(client);
 
+type UpdateData = {
+    report: string;
+    buildSite: string;
+};
+
+const UpdateSchema = z.object({
+    Attributes: z.object({
+        buildSite: z.string(),
+        imageNames: z.array(z.string()),
+        report: z.string(),
+        costs: z.string(),
+        createdAt: z.string(),
+        hours: z.string(),
+        id: z.string(),
+        name: z.string(),
+    }),
+});
+
+type UpdateResponse = z.infer<typeof UpdateSchema>;
+
+const isUpdateSchemaValid = (data: unknown): data is UpdateResponse => {
+    UpdateSchema.parse(data);
+    return true;
+};
+
 export const update_post_in_dynamodb = async (event: APIGatewayProxyEvent) => {
     console.log('Starting update post in dynamodb');
     try {
-        const data = await parser.parse(event);
+        const data: UpdateData = JSON.parse(event.body);
 
         if (!data.report || !data.buildSite || !event.pathParameters?.id) {
             throw new Error(
@@ -32,18 +57,26 @@ export const update_post_in_dynamodb = async (event: APIGatewayProxyEvent) => {
         const command = new UpdateCommand(params);
         const response = await docClient.send(command);
 
-        if (response.$metadata.httpStatusCode !== 200) {
-            throw new Error(`There was an issue updating the post statusCode:${response.$metadata.httpStatusCode}`);
-        }
+        if (!isUpdateSchemaValid(response)) throw new Error();
 
         return {
             statusCode: 200,
-            body: JSON.stringify(response),
+            headers: {
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'PUT',
+            },
+            body: JSON.stringify(response.Attributes),
         };
     } catch (err) {
-        console.error('Error:', err);
+        console.error(err);
         return {
             statusCode: 500,
+            headers: {
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'PUT',
+            },
             body: JSON.stringify({ message: 'There was an error updating post in dynamodb' }),
         };
     }

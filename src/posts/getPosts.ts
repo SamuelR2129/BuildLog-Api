@@ -2,25 +2,29 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import 'source-map-support/register';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { z } from 'zod';
 
-export type PostFromDB = {
-    _id: string;
-    name: string;
-    report: string;
-    buildSite: string;
-    createdAt: string;
-    imageNames?: string[];
-    imageUrls?: string[];
-};
+const PostFromDBSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    report: z.string(),
+    buildSite: z.string(),
+    createdAt: z.string(),
+    imageNames: z.array(z.string()).optional(),
+    imageUrls: z.array(z.string()).optional(),
+});
 
-export type DynamoDb = {
-    Items: PostFromDB[];
-    LastEvaluatedKey: object;
-};
+const DynamoDbSchema = z.object({
+    Items: z.array(PostFromDBSchema),
+    LastEvaluatedKey: z.unknown(),
+});
 
-export const isPostsFromDBValid = (unknownData: DynamoDb | unknown): unknownData is DynamoDb => {
-    const postsFromDB = unknownData as DynamoDb;
-    return postsFromDB && postsFromDB.Items !== undefined && Array.isArray(postsFromDB.Items);
+type DynamoDb = z.infer<typeof DynamoDbSchema>;
+type PostFromDB = z.infer<typeof PostFromDBSchema>;
+
+export const isPostsFromDBValid = (unknownData: unknown): unknownData is DynamoDb => {
+    DynamoDbSchema.parse(unknownData);
+    return true;
 };
 
 export const sortDatesNewestToOldest = (posts: PostFromDB[]): PostFromDB[] => {
@@ -34,13 +38,11 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 export const get_posts_from_dynamodb = async (event: APIGatewayProxyEvent) => {
     console.log('Starting get_posts_from_dynamodb');
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const LastEvaluatedKey = event?.queryStringParameters?.LastEvaluatedKey as unknown as
-        | Record<string, any>
-        | undefined;
-
     try {
+        const LastEvaluatedKey = event?.queryStringParameters?.LastEvaluatedKey && {
+            id: event.queryStringParameters.LastEvaluatedKey,
+        };
+
         const command = new ScanCommand({
             TableName: process.env.DYNAMO_TABLE_NAME,
             Limit: Number(event?.queryStringParameters?.limit) + 1,
@@ -49,20 +51,33 @@ export const get_posts_from_dynamodb = async (event: APIGatewayProxyEvent) => {
 
         const response = await docClient.send(command);
 
-        if (!isPostsFromDBValid(response)) {
-            throw new Error('Getting posts from DB there is a undefined/null value');
-        }
+        if (!isPostsFromDBValid(response)) throw new Error();
 
         const mappedPosts = sortDatesNewestToOldest(response.Items);
 
+        const scanBody = {
+            LastEvaluatedKey: response.LastEvaluatedKey,
+            mappedPosts,
+        };
+
         return {
             statusCode: 200,
-            body: JSON.stringify(mappedPosts),
+            headers: {
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET',
+            },
+            body: JSON.stringify(scanBody),
         };
     } catch (err) {
         console.error('Error:', err);
         return {
             statusCode: 500,
+            headers: {
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET',
+            },
             body: JSON.stringify({ message: 'There was an error getting posts from dynamodb' }),
         };
     }

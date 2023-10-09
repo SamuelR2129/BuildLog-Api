@@ -4,7 +4,13 @@ The lambdas for BuildLog, simple CRUD with AWS integration
 
 START UP
 
+-   nvm install 18 (make sure you have nvm)
 -   npm i
+-   brew install tmux (make sure to have homebrew)
+-   brew install overmind
+
+TO RUN
+
 -   overmind start
 
 (Note: For local development you need to delete .aws-sam directory, so that overmind doesnt use the code from there.)

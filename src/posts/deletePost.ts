@@ -3,7 +3,6 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import * as parser from 'lambda-multipart-parser';
 
 type DeleteBody = {
     imageNames?: string[];
@@ -45,7 +44,7 @@ export const delete_post_from_dynamodb = async (event: APIGatewayProxyEvent) => 
     try {
         const postId = event.pathParameters?.id;
 
-        const parsedBody = await parser.parse(event);
+        const parsedBody = JSON.parse(event.body);
 
         if (!postId) {
             throw new Error('Id is missing from path');
@@ -55,11 +54,12 @@ export const delete_post_from_dynamodb = async (event: APIGatewayProxyEvent) => 
             throw new Error('The body to delete a post is missing information');
         }
 
-        await Promise.all(
-            parsedBody?.files?.map(async (image) => {
-                return await deleteFileFromS3(image.filename);
-            }),
-        );
+        parsedBody.imageNames &&
+            (await Promise.all(
+                parsedBody?.imageNames?.map(async (image) => {
+                    return await deleteFileFromS3(image);
+                }),
+            ));
 
         const params = {
             TableName: process.env.DYNAMO_TABLE_NAME,
@@ -75,12 +75,22 @@ export const delete_post_from_dynamodb = async (event: APIGatewayProxyEvent) => 
 
         return {
             statusCode: 200,
+            headers: {
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'DELETE',
+            },
             body: JSON.stringify(response),
         };
     } catch (err) {
         console.error('Error:', err);
         return {
             statusCode: 500,
+            headers: {
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'DELETE',
+            },
             body: JSON.stringify({ message: 'There was an error deleting posts from dynamodb' }),
         };
     }
