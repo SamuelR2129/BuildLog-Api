@@ -60,6 +60,18 @@ export const get_posts_from_dynamodb = async (event: APIGatewayProxyEvent) => {
             mappedPosts,
         };
 
+        if (!scanBody.LastEvaluatedKey) {
+            return {
+                statusCode: 204,
+                headers: {
+                    'Access-Control-Allow-Headers': 'Content-Type',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                },
+                body: JSON.stringify(scanBody),
+            };
+        }
+
         return {
             statusCode: 200,
             headers: {

@@ -138,6 +138,22 @@ Resources:
             LicenseInfo: 'MIT'
             RetentionPolicy: Retain
 
+    S3UploadBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            CorsConfiguration:  # Indentation fixed here
+                CorsRules:
+                  - AllowedHeaders:
+                    - "*"
+                    AllowedMethods:
+                      - GET
+                      - PUT
+                      - POST
+                      - DELETE
+                      - HEAD
+                    AllowedOrigins:
+                      - "*"
+
 Outputs:
   WebEndpoint:
     Description: "API Gateway endpoint URL for Prod stage"

@@ -24,7 +24,7 @@ const MakePostSchema = z.object({
     costs: z.string(),
     report: z.string(),
     buildSite: z.string(),
-    imageNames: z.array(z.string()).optional(),
+    imageNames: z.string().array().optional(),
 });
 
 type MakePost = z.infer<typeof MakePostSchema>;
@@ -92,7 +92,7 @@ export const save_post_to_dynamodb = async (event: APIGatewayProxyEvent) => {
 
         const response = await docClient.send(command);
 
-        if (response?.$metadata?.httpStatusCode !== 200 || !response?.$metadata?.requestId) {
+        if (response?.$metadata?.httpStatusCode !== 200) {
             throw new Error('Failed to upload post to dynamoDB');
         }
 
