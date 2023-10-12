@@ -36,10 +36,10 @@ Resources:
             BuildMethod: makefile
         Properties:
             Policies:
-                - DynamoDBCrudPolicy:
+              - DynamoDBCrudPolicy:
                     TableName: !Ref PostsDynamoDbTable
-                - S3CrudPolicy:
-                    BucketName: "s3-lambda-stack-srcbucket-dpcaitz3x0hb"
+              - S3CrudPolicy:
+                    BucketName: !Ref S3UploadBucket
             Handler: dist/posts/savePost.save_post_to_dynamodb
             Events:
                 Api:
@@ -88,6 +88,8 @@ Resources:
             Policies:
                 - DynamoDBCrudPolicy:
                     TableName: !Ref PostsDynamoDbTable
+                - S3CrudPolicy:
+                    BucketName: !Ref S3UploadBucket
             Handler: dist/posts/deletePost.delete_post_from_dynamodb
             Events:
                 Api:
@@ -140,7 +142,9 @@ Resources:
 
     S3UploadBucket:
         Type: AWS::S3::Bucket
+        DeletionPolicy: Retain
         Properties:
+            BucketName: 's3-lambda-stack-srcbucket-dpcaitz3x0hb'
             CorsConfiguration:  # Indentation fixed here
                 CorsRules:
                   - AllowedHeaders:
