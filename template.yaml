@@ -28,6 +28,7 @@ Globals:
                 DYNAMO_TABLE: !Ref PostsDynamoDbTable
                 DYNAMO_TABLE_NAME: 'post-tables'
                 S3_BUCKET_NAME: 's3-lambda-stack-srcbucket-dpcaitz3x0hb'
+                CLOUDFRONT_URL: 'https://dnhi95iahz2rb.cloudfront.net/'
 Resources:
 
     UploadPostToDynamo:
@@ -155,6 +156,7 @@ Resources:
                       - POST
                       - DELETE
                       - HEAD
+                      - OPTIONS
                     AllowedOrigins:
                       - "*"
 

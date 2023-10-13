@@ -40,7 +40,7 @@ export const deleteFileFromS3 = async (imageNames: string) => {
 };
 
 export const delete_post_from_dynamodb = async (event: APIGatewayProxyEvent) => {
-    console.log('Starting delete post from dynamodb');
+    console.log('Starting delete_post_from_dynamodb');
     try {
         const postId = event.pathParameters?.id;
 

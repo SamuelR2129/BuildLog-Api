@@ -3,6 +3,10 @@ import 'source-map-support/register';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
+const s3 = new S3Client({ region: process.env.REGION_NAME });
 
 const PostFromDBSchema = z.object({
     id: z.string(),
@@ -33,6 +37,20 @@ export const sortDatesNewestToOldest = (posts: PostFromDB[]): PostFromDB[] => {
     );
 };
 
+const getImageUrls = (posts: PostFromDB[]): PostFromDB[] => {
+    return posts.map((post) => {
+        if (!post.imageUrls) {
+            return post;
+        }
+
+        post.imageUrls = post.imageNames.map((imageName) => {
+            return `${process.env.CLOUDFRONT_URL}${imageName}`;
+        });
+
+        return post;
+    });
+};
+
 const client = new DynamoDBClient({ region: process.env.REGION_NAME });
 const docClient = DynamoDBDocumentClient.from(client);
 
@@ -55,9 +73,11 @@ export const get_posts_from_dynamodb = async (event: APIGatewayProxyEvent) => {
 
         const mappedPosts = sortDatesNewestToOldest(response.Items);
 
+        const postsWithImages = getImageUrls(mappedPosts);
+
         const scanBody = {
             LastEvaluatedKey: response.LastEvaluatedKey,
-            mappedPosts,
+            postsWithImages,
         };
 
         if (!scanBody.LastEvaluatedKey) {

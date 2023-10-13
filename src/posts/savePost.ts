@@ -1,6 +1,6 @@
 import 'source-map-support/register';
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { PutCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
@@ -38,11 +38,9 @@ const s3 = new S3Client({ region: process.env.REGION_NAME });
 const client = new DynamoDBClient({ region: process.env.REGION_NAME });
 const docClient = DynamoDBDocumentClient.from(client);
 
-export const getUploadImageUrl = async (image: string): Promise<string> => {
-    console.log('Getting the s3 upload urls');
-
+export const getUploadImageUrl = async (name: string): Promise<string> => {
     const command = new PutObjectCommand({
-        Key: image,
+        Key: name,
         Bucket: process.env.S3_BUCKET_NAME,
     });
 
@@ -66,8 +64,8 @@ export const save_post_to_dynamodb = async (event: APIGatewayProxyEvent) => {
         const imageUrls =
             parsedBody.imageNames &&
             (await Promise.all(
-                parsedBody?.imageNames?.map(async (image) => {
-                    return await getUploadImageUrl(image);
+                parsedBody?.imageNames?.map(async (name) => {
+                    return await getUploadImageUrl(name);
                 }),
             ));
 
@@ -107,7 +105,7 @@ export const save_post_to_dynamodb = async (event: APIGatewayProxyEvent) => {
             headers: {
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST',
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
             },
             body: JSON.stringify(body),
         };
@@ -118,7 +116,7 @@ export const save_post_to_dynamodb = async (event: APIGatewayProxyEvent) => {
             headers: {
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST',
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
             },
             body: JSON.stringify({ message: 'There was an error saving post to dynamodb' }),
         };

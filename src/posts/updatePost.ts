@@ -15,7 +15,7 @@ type UpdateData = {
 const UpdateSchema = z.object({
     Attributes: z.object({
         buildSite: z.string(),
-        imageNames: z.array(z.string()),
+        imageNames: z.array(z.string()).optional(),
         report: z.string(),
         costs: z.string(),
         createdAt: z.string(),
@@ -33,7 +33,7 @@ const isUpdateSchemaValid = (data: unknown): data is UpdateResponse => {
 };
 
 export const update_post_in_dynamodb = async (event: APIGatewayProxyEvent) => {
-    console.log('Starting update post in dynamodb');
+    console.log('Starting update_post_in_dynamodb');
     try {
         const data: UpdateData = JSON.parse(event.body);
 
