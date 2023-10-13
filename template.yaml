@@ -156,7 +156,6 @@ Resources:
                       - POST
                       - DELETE
                       - HEAD
-                      - OPTIONS
                     AllowedOrigins:
                       - "*"
 
