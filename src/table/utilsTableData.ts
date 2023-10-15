@@ -107,6 +107,7 @@ export const addValuesTogether = (postValues: TableData[]): TableData[] => {
 
         return {
             id: element.id,
+            postId: element.postId,
             name: element.name,
             createdAt: element.createdAt,
             costs: totalCost.toString(),

@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 type NewItem = {
     id: string;
+    postId: string;
     createdAt: string;
     name: string;
     hours: string;
@@ -71,6 +72,7 @@ export const save_post_to_dynamodb = async (event: APIGatewayProxyEvent) => {
 
         const newItem: NewItem = {
             id: process.env.POST_ID,
+            postId: randomUUID(),
             name: parsedBody.name,
             hours: parsedBody.hours,
             costs: parsedBody.costs,

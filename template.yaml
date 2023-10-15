@@ -97,7 +97,7 @@ Resources:
                 Api:
                     Type: Api
                     Properties:
-                        Path: /deletePost/{id}
+                        Path: /deletePost/{postId}
                         Method: DELETE
 
     UpdatePostInDynamo:
@@ -113,7 +113,7 @@ Resources:
                 Api:
                     Type: Api
                     Properties:
-                        Path: /updatePost/{id}
+                        Path: /updatePost/{postId}
                         Method: PUT
 
     PostsDynamoDbTable:
@@ -122,8 +122,8 @@ Resources:
             AttributeDefinitions:
               - AttributeName: id
                 AttributeType: S
-              - AttributeName: createdAt  # Define the sort key attribute
-                AttributeType: S  # You can adjust the AttributeType as needed (e.g., N for Number)
+              - AttributeName: createdAt  
+                AttributeType: S 
             KeySchema:
               - AttributeName: id
                 KeyType: HASH

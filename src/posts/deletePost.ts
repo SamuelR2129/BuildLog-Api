@@ -42,7 +42,7 @@ export const deleteFileFromS3 = async (imageNames: string) => {
 export const delete_post_from_dynamodb = async (event: APIGatewayProxyEvent) => {
     console.log('Starting delete_post_from_dynamodb');
     try {
-        const postId = event.pathParameters?.id;
+        const postId = event.pathParameters?.postId;
 
         const parsedBody = JSON.parse(event.body);
 
@@ -63,7 +63,7 @@ export const delete_post_from_dynamodb = async (event: APIGatewayProxyEvent) => 
 
         const params = {
             TableName: process.env.DYNAMO_TABLE_NAME,
-            Key: { id: postId },
+            Key: { postId: postId },
         };
 
         const command = new DeleteCommand(params);

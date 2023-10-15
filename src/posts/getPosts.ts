@@ -7,6 +7,7 @@ import { utcToZonedTime } from 'date-fns-tz';
 
 const PostFromDBSchema = z.object({
     id: z.string(),
+    postId: z.string(),
     name: z.string(),
     report: z.string(),
     buildSite: z.string(),

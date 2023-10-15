@@ -6,6 +6,7 @@ import { mapTableData, subtractDaysFromWeek } from './utilsTableData';
 
 export type TableData = {
     id: string;
+    postId: string;
     name: string;
     costs: string;
     hours: string;

@@ -203,28 +203,28 @@ describe('addValuesTogether', () => {
     test('should update array elements with total cost and hours, removing duplicates', () => {
         const inputArray = [
             {
-                id: '1',
+                postId: '1',
                 name: 'A',
                 createdAt: '2022-02-02',
                 costs: '5',
                 hours: '2',
             },
             {
-                id: '2',
+                postId: '2',
                 name: 'B',
                 createdAt: '2022-02-02',
                 costs: '10',
                 hours: '3',
             },
             {
-                id: '3',
+                postId: '3',
                 name: 'A',
                 createdAt: '2022-02-02',
                 costs: '3',
                 hours: '1',
             },
             {
-                id: '4',
+                postId: '4',
                 name: 'C',
                 createdAt: '2022-02-02',
                 costs: '8',
@@ -234,21 +234,21 @@ describe('addValuesTogether', () => {
 
         const expectedArray = [
             {
-                id: '1',
+                postId: '1',
                 name: 'A',
                 createdAt: '2022-02-02',
                 costs: '8',
                 hours: '3',
             },
             {
-                id: '2',
+                postId: '2',
                 name: 'B',
                 createdAt: '2022-02-02',
                 costs: '10',
                 hours: '3',
             },
             {
-                id: '4',
+                postId: '4',
                 name: 'C',
                 createdAt: '2022-02-02',
                 costs: '8',
@@ -271,8 +271,8 @@ describe('addValuesTogether', () => {
 
     test('should not modify the original input array', () => {
         const inputArray = [
-            { id: '1', name: 'A', createdAt: new Date().toString(), costs: '5', hours: '2' },
-            { id: '2', name: 'B', createdAt: new Date().toString(), costs: '10', hours: '3' },
+            { postId: '1', name: 'A', createdAt: new Date().toString(), costs: '5', hours: '2' },
+            { postId: '2', name: 'B', createdAt: new Date().toString(), costs: '10', hours: '3' },
         ] as TableData[];
 
         const originalArray = [...inputArray];
@@ -288,13 +288,15 @@ describe('addDailyUserEntriesTogether', () => {
         monday: [
             {
                 id: '1',
+                postId: '1',
                 name: 'Entry 1',
                 createdAt: new Date().toString(),
                 costs: '10',
                 hours: '2',
             },
             {
-                id: '2',
+                id: '1',
+                postId: '2',
                 name: 'Entry 2',
                 createdAt: new Date().toString(),
                 costs: '15',
@@ -302,6 +304,7 @@ describe('addDailyUserEntriesTogether', () => {
             },
             {
                 id: '1',
+                postId: '1',
                 name: 'Entry 1',
                 createdAt: new Date().toString(),
                 costs: '20',
@@ -310,14 +313,16 @@ describe('addDailyUserEntriesTogether', () => {
         ],
         tuesday: [
             {
-                id: '3',
+                id: '1',
+                postId: '3',
                 name: 'Entry 3',
                 createdAt: new Date().toString(),
                 costs: '20',
                 hours: '4',
             },
             {
-                id: '4',
+                id: '1',
+                postId: '4',
                 name: 'Entry 4',
                 createdAt: new Date().toString(),
                 costs: '25',
@@ -335,13 +340,15 @@ describe('addDailyUserEntriesTogether', () => {
         monday: [
             {
                 id: '1',
+                postId: '1',
                 name: 'Entry 1',
                 createdAt: expect.any(String),
                 costs: '30',
                 hours: '5',
             },
             {
-                id: '2',
+                id: '1',
+                postId: '2',
                 name: 'Entry 2',
                 createdAt: expect.any(String),
                 costs: '15',
@@ -350,14 +357,16 @@ describe('addDailyUserEntriesTogether', () => {
         ],
         tuesday: [
             {
-                id: '3',
+                id: '1',
+                postId: '3',
                 name: 'Entry 3',
                 createdAt: expect.any(String),
                 costs: '20',
                 hours: '4',
             },
             {
-                id: '4',
+                id: '1',
+                postId: '4',
                 name: 'Entry 4',
                 createdAt: expect.any(String),
                 costs: '25',
@@ -383,6 +392,7 @@ describe('sortDataByWeek', () => {
         const postData: TableData[] = [
             {
                 id: '1',
+                postId: '1',
                 name: 'Item 1',
                 costs: '10',
                 hours: '2',
@@ -390,6 +400,7 @@ describe('sortDataByWeek', () => {
             },
             {
                 id: '2',
+                postId: '2',
                 name: 'Item 2',
                 costs: '15',
                 hours: '3',
