@@ -1,8 +1,9 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import 'source-map-support/register';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
+import { utcToZonedTime } from 'date-fns-tz';
 
 const PostFromDBSchema = z.object({
     id: z.string(),
@@ -54,13 +55,22 @@ export const get_posts_from_dynamodb = async (event: APIGatewayProxyEvent) => {
     console.log('Starting get_posts_from_dynamodb');
     try {
         const LastEvaluatedKey = event?.queryStringParameters?.LastEvaluatedKey && {
-            id: event.queryStringParameters.LastEvaluatedKey,
+            id: process.env.POST_ID,
+            createdAt: event.queryStringParameters.LastEvaluatedKey,
         };
 
-        const command = new ScanCommand({
+        console.log(LastEvaluatedKey);
+
+        const command = new QueryCommand({
             TableName: process.env.DYNAMO_TABLE_NAME,
             Limit: Number(event?.queryStringParameters?.limit) + 1,
             ExclusiveStartKey: LastEvaluatedKey,
+            ScanIndexForward: false,
+            KeyConditionExpression: 'id = :id AND createdAt <= :date',
+            ExpressionAttributeValues: {
+                ':date': utcToZonedTime(new Date(), 'Australia/Sydney').toISOString(),
+                ':id': process.env.POST_ID,
+            },
         });
 
         const response = await docClient.send(command);
@@ -75,18 +85,6 @@ export const get_posts_from_dynamodb = async (event: APIGatewayProxyEvent) => {
             LastEvaluatedKey: response.LastEvaluatedKey,
             posts: postsWithImages,
         };
-
-        if (!scanBody.LastEvaluatedKey) {
-            return {
-                statusCode: 204,
-                headers: {
-                    'Access-Control-Allow-Headers': 'Content-Type',
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET',
-                },
-                body: JSON.stringify(scanBody.posts),
-            };
-        }
 
         return {
             statusCode: 200,

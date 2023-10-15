@@ -29,6 +29,7 @@ Globals:
                 DYNAMO_TABLE_NAME: 'post-tables'
                 S3_BUCKET_NAME: 's3-lambda-stack-srcbucket-dpcaitz3x0hb'
                 CLOUDFRONT_URL: 'https://dnhi95iahz2rb.cloudfront.net/'
+                POST_ID: '1'
 Resources:
 
     UploadPostToDynamo:
@@ -119,11 +120,15 @@ Resources:
         Type: AWS::DynamoDB::Table
         Properties:
             AttributeDefinitions:
-                - AttributeName: id
-                  AttributeType: S
+              - AttributeName: id
+                AttributeType: S
+              - AttributeName: createdAt  # Define the sort key attribute
+                AttributeType: S  # You can adjust the AttributeType as needed (e.g., N for Number)
             KeySchema:
-                - AttributeName: id
-                  KeyType: HASH
+              - AttributeName: id
+                KeyType: HASH
+              - AttributeName: createdAt  # Set the sort key
+                KeyType: RANGE
             ProvisionedThroughput:
                 ReadCapacityUnits: 5
                 WriteCapacityUnits: 5

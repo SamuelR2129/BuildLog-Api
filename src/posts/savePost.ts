@@ -70,7 +70,7 @@ export const save_post_to_dynamodb = async (event: APIGatewayProxyEvent) => {
             ));
 
         const newItem: NewItem = {
-            id: randomUUID(),
+            id: process.env.POST_ID,
             name: parsedBody.name,
             hours: parsedBody.hours,
             costs: parsedBody.costs,
