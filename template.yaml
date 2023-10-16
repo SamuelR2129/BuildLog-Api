@@ -88,9 +88,9 @@ Resources:
             BuildMethod: makefile
         Properties:
             Policies:
-                - DynamoDBCrudPolicy:
+              - DynamoDBCrudPolicy:
                     TableName: !Ref PostsDynamoDbTable
-                - S3CrudPolicy:
+              - S3CrudPolicy:
                     BucketName: !Ref S3UploadBucket
             Handler: dist/posts/deletePost.delete_post_from_dynamodb
             Events:
@@ -154,7 +154,7 @@ Resources:
             CorsConfiguration:  # Indentation fixed here
                 CorsRules:
                   - AllowedHeaders:
-                    - "*"
+                      - "*"
                     AllowedMethods:
                       - GET
                       - PUT

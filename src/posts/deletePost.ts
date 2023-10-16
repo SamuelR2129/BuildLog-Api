@@ -6,12 +6,6 @@ import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 type DeleteBody = {
     imageNames?: string[];
-    files?: File[];
-};
-
-export const isDeleteBodyValid = (unknown: unknown): unknown is DeleteBody => {
-    const body = unknown as DeleteBody;
-    return body !== undefined;
 };
 
 const client = new DynamoDBClient({ region: process.env.REGION_NAME });
@@ -43,27 +37,22 @@ export const delete_post_from_dynamodb = async (event: APIGatewayProxyEvent) => 
     console.log('Starting delete_post_from_dynamodb');
     try {
         const postId = event.pathParameters?.postId;
+        const createdAt = event.queryStringParameters.createdAt;
 
-        const parsedBody = JSON.parse(event.body);
-
-        if (!postId) {
-            throw new Error('Id is missing from path');
+        if (!postId && !createdAt) {
+            throw new Error('Id or createdAt is missing from path');
         }
 
-        if (!isDeleteBodyValid(parsedBody)) {
-            throw new Error('The body to delete a post is missing information');
-        }
-
-        parsedBody.imageNames &&
-            (await Promise.all(
-                parsedBody?.imageNames?.map(async (image) => {
-                    return await deleteFileFromS3(image);
-                }),
-            ));
+        // parsedBody.imageNames &&
+        //     (await Promise.all(
+        //         parsedBody?.imageNames?.map(async (image) => {
+        //             return await deleteFileFromS3(image);
+        //         }),
+        //     ));
 
         const params = {
             TableName: process.env.DYNAMO_TABLE_NAME,
-            Key: { postId: postId },
+            Key: { id: process.env.POST_ID, createdAt },
         };
 
         const command = new DeleteCommand(params);
@@ -83,7 +72,7 @@ export const delete_post_from_dynamodb = async (event: APIGatewayProxyEvent) => 
             body: JSON.stringify(response),
         };
     } catch (err) {
-        console.error('Error:', err);
+        console.error(err);
         return {
             statusCode: 500,
             headers: {
