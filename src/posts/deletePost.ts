@@ -3,31 +3,44 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { CloudFrontClient, CreateInvalidationCommand } from '@aws-sdk/client-cloudfront';
 
 type DeleteBody = {
     imageNames?: string[];
 };
 
-const client = new DynamoDBClient({ region: process.env.REGION_NAME });
-const docClient = DynamoDBDocumentClient.from(client);
-const s3 = new S3Client({ region: process.env.REGION_NAME });
+const dynamoClient = new DynamoDBClient({ region: process.env.REGION_NAME });
+const docClient = DynamoDBDocumentClient.from(dynamoClient);
+const s3Client = new S3Client({ region: process.env.REGION_NAME });
+const cloudfrontClient = new CloudFrontClient({ region: process.env.REGION_NAME });
 
-export const deleteFileFromS3 = async (imageNames: string) => {
+export const deleteFileFromS3 = async (imageName: string): Promise<void> => {
     try {
         const command = new DeleteObjectCommand({
-            Key: imageNames,
+            Key: imageName,
             Bucket: process.env.S3_BUCKET_NAME,
         });
 
-        const response = await s3.send(command);
+        const response = await s3Client.send(command);
 
-        if (!response || response.$metadata.httpStatusCode != 204) {
+        if (response.$metadata.httpStatusCode != 204) {
             throw new Error(
                 `There was an issue deleting image at s3 - code: ${response?.$metadata.httpStatusCode}, result:${response} `,
             );
         }
 
-        return response;
+        const invalidationParams = {
+            DistributionId: process.env.CLOUDFRONT_DIST_ID,
+            InvalidationBatch: {
+                CallerReference: imageName,
+                Paths: {
+                    Quantity: 1,
+                    Items: [`/${imageName}`],
+                },
+            },
+        };
+
+        await cloudfrontClient.send(new CreateInvalidationCommand(invalidationParams));
     } catch (err) {
         throw err;
     }
@@ -36,19 +49,19 @@ export const deleteFileFromS3 = async (imageNames: string) => {
 export const delete_post_from_dynamodb = async (event: APIGatewayProxyEvent) => {
     console.log('Starting delete_post_from_dynamodb');
     try {
-        const postId = event.pathParameters?.postId;
-        const createdAt = event.queryStringParameters.createdAt;
+        const parsedBody: DeleteBody = JSON.parse(event.body);
+        const createdAt = event.pathParameters.postId;
 
-        if (!postId && !createdAt) {
+        if (!createdAt) {
             throw new Error('Id or createdAt is missing from path');
         }
 
-        // parsedBody.imageNames &&
-        //     (await Promise.all(
-        //         parsedBody?.imageNames?.map(async (image) => {
-        //             return await deleteFileFromS3(image);
-        //         }),
-        //     ));
+        parsedBody.imageNames &&
+            (await Promise.all(
+                parsedBody.imageNames.map(async (image) => {
+                    await deleteFileFromS3(image);
+                }),
+            ));
 
         const params = {
             TableName: process.env.DYNAMO_TABLE_NAME,

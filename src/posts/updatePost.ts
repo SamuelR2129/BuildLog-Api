@@ -10,6 +10,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 type UpdateData = {
     report: string;
     buildSite: string;
+    createdAt: string;
 };
 
 const UpdateSchema = z.object({
@@ -38,7 +39,7 @@ export const update_post_in_dynamodb = async (event: APIGatewayProxyEvent) => {
     try {
         const data: UpdateData = JSON.parse(event.body);
 
-        if (!data.report || !data.buildSite || !event.pathParameters?.postId) {
+        if (!data.report || !data.buildSite || !event.pathParameters.postId || !data.createdAt) {
             throw new Error(
                 `Value missing to update id: ${event.pathParameters?.id} buildSite: ${data.buildSite} report: ${data.report} `,
             );
@@ -46,7 +47,7 @@ export const update_post_in_dynamodb = async (event: APIGatewayProxyEvent) => {
 
         const params = {
             TableName: process.env.DYNAMO_TABLE_NAME,
-            Key: { postId: event.pathParameters.postId },
+            Key: { id: process.env.POST_ID, createdAt: data.createdAt },
             UpdateExpression: 'SET report = :report, buildSite = :buildSite',
             ExpressionAttributeValues: {
                 ':report': data.report,
