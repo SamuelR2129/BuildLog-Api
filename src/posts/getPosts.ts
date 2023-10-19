@@ -5,6 +5,21 @@ import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-
 import { z } from 'zod';
 import { utcToZonedTime } from 'date-fns-tz';
 
+interface Params {
+    TableName: string;
+    KeyConditionExpression: string;
+    ExclusiveStartKey?: { id: string; createdAt: string };
+    FilterExpression?: string;
+    ExpressionAttributeNames: {
+        [key: string]: string;
+    };
+    ExpressionAttributeValues: {
+        [key: string]: any;
+    };
+    ScanIndexForward: boolean;
+    Limit: number;
+}
+
 const PostFromDBSchema = z.object({
     id: z.string(),
     postId: z.string(),
@@ -55,26 +70,36 @@ const docClient = DynamoDBDocumentClient.from(client);
 export const get_posts_from_dynamodb = async (event: APIGatewayProxyEvent) => {
     console.log('Starting get_posts_from_dynamodb');
     try {
-        const LastEvaluatedKey = event?.queryStringParameters?.LastEvaluatedKey && {
+        const LastEvaluatedKey = event.queryStringParameters.LastEvaluatedKey && {
             id: process.env.POST_ID,
             createdAt: event.queryStringParameters.LastEvaluatedKey,
         };
 
-        console.log(LastEvaluatedKey);
+        const buildSite = event.queryStringParameters.buildSite;
 
-        const command = new QueryCommand({
+        const params: Params = {
             TableName: process.env.DYNAMO_TABLE_NAME,
+            KeyConditionExpression: '#id = :id AND #createdAt <= :date',
             Limit: Number(event?.queryStringParameters?.limit) + 1,
             ExclusiveStartKey: LastEvaluatedKey,
-            ScanIndexForward: false,
-            KeyConditionExpression: 'id = :id AND createdAt <= :date',
-            ExpressionAttributeValues: {
-                ':date': utcToZonedTime(new Date(), 'Australia/Sydney').toISOString(),
-                ':id': process.env.POST_ID,
+            ExpressionAttributeNames: {
+                '#id': 'id',
+                '#createdAt': 'createdAt',
             },
-        });
+            ExpressionAttributeValues: {
+                ':id': process.env.POST_ID,
+                ':date': utcToZonedTime(new Date(), 'Australia/Sydney').toISOString(),
+            },
+            ScanIndexForward: false,
+        };
 
-        const response = await docClient.send(command);
+        if (buildSite) {
+            params.ExpressionAttributeNames['#buildSite'] = 'buildSite';
+            params.ExpressionAttributeValues[':buildSiteKey'] = buildSite;
+            params.FilterExpression = '#buildSite = :buildSiteKey';
+        }
+
+        const response = await docClient.send(new QueryCommand(params));
 
         if (!isPostsFromDBValid(response)) throw new Error();
 

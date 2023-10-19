@@ -89,11 +89,10 @@ Resources:
             BuildMethod: makefile
         Properties:
             Policies:
-              - DynamoDBCrudPolicy:
+                - DynamoDBCrudPolicy:
                     TableName: !Ref PostsDynamoDbTable
-              - S3CrudPolicy:
+                - S3CrudPolicy:
                     BucketName: !Ref S3UploadBucket
-              - !Ref CloudFrontInvalidationPolicy
             Handler: dist/posts/deletePost.delete_post_from_dynamodb
             Events:
                 Api:
@@ -165,17 +164,6 @@ Resources:
                       - HEAD
                     AllowedOrigins:
                       - "*"
-
-    CloudFrontInvalidationPolicy:
-        Type: AWS::IAM::Policy
-        Properties:
-            PolicyName: MyApiPolicy
-            PolicyDocument:
-                Statement:
-                  - Effect: Allow
-                    Action:
-                      - cloudfront:CreateInvalidation
-                    Resource: "*"
 
 Outputs:
   WebEndpoint:
